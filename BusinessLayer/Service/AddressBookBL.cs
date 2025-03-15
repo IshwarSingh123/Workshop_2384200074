@@ -53,7 +53,6 @@ namespace BusinessLayer.Service
                     FirstName = addressBookModel.FirstName,
                     LastName = addressBookModel.LastName,
                     Email = addressBookModel.Email,
-                    Password = addressBookModel.Password,
                     PhoneNumber = addressBookModel.PhoneNumber,
                     Address = addressBookModel.Address,
                     Country = addressBookModel.Country,

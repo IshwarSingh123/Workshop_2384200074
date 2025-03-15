@@ -1,4 +1,5 @@
 ﻿using BusinessLayer.Interface;
+using DataAccessLayer.Interface;
 using Microsoft.AspNetCore.Mvc;
 using ModelLayer.Model;
 
@@ -9,9 +10,11 @@ namespace Address_Book_Application.Controllers
     public class UserAuthenticationController : ControllerBase
     {
         private readonly IUserBL _userBL;
-        public UserAuthenticationController(IUserBL userBL)
+        private readonly IEmailService _emailService;
+        public UserAuthenticationController(IUserBL userBL,IEmailService emailService)
         {
             _userBL = userBL;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -39,7 +42,7 @@ namespace Address_Book_Application.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            catch(NullReferenceException ex)
+            catch(Exception ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -56,24 +59,35 @@ namespace Address_Book_Application.Controllers
             try
             {
                 var response = new ResponseModel<string>();
-                var data =  _userBL.Registration(registrationUserModel);
+                var data = _userBL.Registration(registrationUserModel);
+                if (data == null)
+                {
+                    response.Success = false;
+                    response.Message = "User Already registered Successfully.";
+                    response.Data = data.Email;
+                    
+                    return Ok(response);
+                }
 
 
                 response.Success = true;
                 response.Message = "User registered Successfully.";
                 response.Data = data.Email;
+                _emailService.SendEmail(data.Email, "Registration successfully", "You Are Registered Successfully");
                 return Ok(response);
             }
-
-
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                return BadRequest(ex.Message);
-                
+                return BadRequest(ex.Message);  
             }
-
-
+               
         }
+
+
+           
+
+
+        
         /// <summary>
         /// Post method to Forget password
         /// </summary>

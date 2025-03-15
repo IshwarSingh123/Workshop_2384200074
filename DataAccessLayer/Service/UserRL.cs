@@ -25,22 +25,14 @@ namespace RepositoryLayer.Service
 
         public UserEntity GetEmail(string email)
         {
-            try
-            {
-                var user = _dbContext.UserData.FirstOrDefault(u => u.Email == email);
+            var user = _dbContext.UserData.FirstOrDefault(u => u.Email == email);
 
                 if (user == null)
                 {
-                    throw new NullReferenceException();
+                    return null;
                 }
 
                 return user;
-            }
-            catch(NullReferenceException)
-            {
-                throw ;
-            }
-            
         }
 
         public UserEntity Login(LoginUserModel userLoginModel)
@@ -64,27 +56,30 @@ namespace RepositoryLayer.Service
         {
             try
             {
-                var data = _dbContext.UserData.FirstOrDefaultAsync(e => e.Email == userEntity.Email);
+                var data = _dbContext.UserData.FirstOrDefault(e => e.Email == userEntity.Email);
                 if (data != null)
                 {
                     throw new Exception("User Already registered!");
                 }
                 _dbContext.UserData.Add(userEntity);
-                _dbContext.SaveChangesAsync();
+                _dbContext.SaveChanges();
                 return userEntity;
             }
-            catch (Exception)
+            catch(Exception)
             {
                 throw;
             }
+                
         }
+           
+        
 
 
         public bool UpdatePassword(UserEntity userEntity)
         {
 
             _dbContext.UserData.Update(userEntity);
-            _dbContext.SaveChangesAsync();
+            _dbContext.SaveChanges();
             return true;
         }
 

@@ -40,8 +40,8 @@ namespace BusinessLayer.Service
                     FirstName = registrationUserModel.FirstName,
                     LastName = registrationUserModel.LastName,
                     Email = registrationUserModel.Email,
-                    Password = BCrypt.Net.BCrypt.HashPassword(registrationUserModel.Password),
-                    PhoneNumber = registrationUserModel.PhoneNumber,
+                    Password = BCrypt.Net.BCrypt.HashPassword(registrationUserModel.Password)
+
                 };
 
                 return _userRL.Registration(newUser);
@@ -51,33 +51,44 @@ namespace BusinessLayer.Service
                 throw;
             }
 
+
         }
+
+
+
         public string Login(LoginUserModel userLoginModel)
         {
-            if (userLoginModel == null)
-            {
-                throw new ArgumentNullException();
-            }
             try
             {
-                var data = _userRL.Login(userLoginModel);
-                if (data != null && BCrypt.Net.BCrypt.Verify(userLoginModel.Password, data.Password))
+                if (userLoginModel == null)
                 {
-                    var token = _jwtServices.GenerateToken(data);
-                    return token;
+                    throw new ArgumentNullException(nameof(userLoginModel), "Login data cannot be null.");
                 }
-                throw new NullReferenceException();
+
+                var data = _userRL.Login(userLoginModel);
+
+                if (data == null)
+                {
+                    throw new Exception("User not found! Please register first.");
+                }
+
+                if (!BCrypt.Net.BCrypt.Verify(userLoginModel.Password, data.Password))
+                {
+                    throw new Exception("Invalid credentials.");
+                }
+
+                return _jwtServices.GenerateToken(data); // Return token on successful login
             }
-            catch (ArgumentNullException) 
+            catch (ArgumentNullException ex)
             {
-                throw; 
+                throw new Exception("Invalid login request: " + ex.Message);
             }
-            catch(NullReferenceException)
+            catch (Exception ex)
             {
-                throw;
+                throw new Exception("Login failed: " + ex.Message);
             }
-               
         }
+
         public bool ForgetPassword(ForgetPasswordModel forgetPasswordModel)
         {
             try

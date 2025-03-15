@@ -1,4 +1,5 @@
 using BusinessLayer.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModelLayer.Model;
 
@@ -26,6 +27,7 @@ namespace Address_Book_Application.Controllers
         /// Get method to get all contacts
         /// </summary>
         /// <returns></returns>
+      
         [HttpGet]
         public IActionResult GetAllContacts()
         {
@@ -38,6 +40,7 @@ namespace Address_Book_Application.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("{id}")]
         public IActionResult GetContactById(int id)
         {
@@ -68,6 +71,12 @@ namespace Address_Book_Application.Controllers
             }
             
         }
+        /// <summary>
+        /// Post method to add a new contact
+        /// </summary>
+        /// <param name="addressBookModel"></param>
+        /// <returns></returns>
+        [Authorize]
         [HttpPost("addNewContact")]
         public IActionResult AddNewContact(AddressBookModel addressBookModel)
         {
@@ -91,7 +100,13 @@ namespace Address_Book_Application.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-
+        /// <summary>
+        /// Put method to Update a contact
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="updatedContact"></param>
+        /// <returns></returns>
+        [Authorize]
         [HttpPut("{id}")]
         public IActionResult UpdateContact(int id, [FromBody] AddressBookModel updatedContact)
         {
@@ -125,6 +140,12 @@ namespace Address_Book_Application.Controllers
 
             return Ok(response);
         }
+        /// <summary>
+        /// Delete method to delete a contact
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [Authorize]
         [HttpDelete("{id}")]
         public IActionResult DeleteContact(int id)
         {
