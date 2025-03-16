@@ -8,6 +8,8 @@ using DataAccessLayer.Entity;
 using DataAccessLayer.Interface;
 using ModelLayer.Model;
 using BCrypt.Net;
+using StackExchange.Redis;
+using Newtonsoft.Json.Linq;
 
 namespace BusinessLayer.Service
 {
@@ -16,11 +18,14 @@ namespace BusinessLayer.Service
         private readonly IUserRL _userRL;
         private readonly JwtServices _jwtServices;
         private readonly IEmailService _emailService;
-        public UserBL(IUserRL userRL, JwtServices jwtServices, IEmailService emailService)
+        private readonly IDatabase _redisDb;
+        public UserBL(IUserRL userRL, JwtServices jwtServices, IEmailService emailService,IDatabase redis)
         {
             _userRL = userRL;
             _jwtServices = jwtServices;
             _emailService = emailService;
+            _redisDb = redis;
+            
         }
 
 
@@ -65,6 +70,15 @@ namespace BusinessLayer.Service
                     throw new ArgumentNullException(nameof(userLoginModel), "Login data cannot be null.");
                 }
 
+                string cacheKey = $"UserToken:{userLoginModel.Email}";
+
+                // Check if token exists in Redis cache
+                var cachedToken = _redisDb.StringGet(cacheKey);
+                if (!cachedToken.IsNullOrEmpty)
+                {
+                    return cachedToken; // Return cached JWT token
+                }
+
                 var data = _userRL.Login(userLoginModel);
 
                 if (data == null)
@@ -76,8 +90,14 @@ namespace BusinessLayer.Service
                 {
                     throw new Exception("Invalid credentials.");
                 }
+                else
+                {
+                    string token = _jwtServices.GenerateToken(data); // Return token on successful login
+                    _redisDb.StringSet(cacheKey, token, TimeSpan.FromMinutes(30));
+                    return token;
+                }
 
-                return _jwtServices.GenerateToken(data); // Return token on successful login
+                
             }
             catch (ArgumentNullException ex)
             {
@@ -149,5 +169,30 @@ namespace BusinessLayer.Service
             }
 
         }
+
+        public bool Logout(string email)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(email))
+                {
+                    throw new ArgumentNullException(nameof(email), "Email cannot be null or empty.");
+                }
+
+                string cacheKey = $"UserToken:{email}";
+
+                if (_redisDb.KeyExists(cacheKey))
+                {
+                    _redisDb.KeyDelete(cacheKey); 
+                    return true; 
+                }
+                return false; 
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Logout failed: " + ex.Message);
+            }
+        }
+
     }
 }

@@ -15,5 +15,6 @@ namespace BusinessLayer.Interface
         UserEntity Registration(RegistrationUserModel registrationUserModel);
         bool ForgetPassword(ForgetPasswordModel model);
         bool ResetPassword(ResetPasswordModel model);
+        bool Logout(string email);
     }
 }

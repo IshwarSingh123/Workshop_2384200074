@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(AddressBookContext))]
-    [Migration("20250315062413_RemovePasswordFromAddressBook")]
-    partial class RemovePasswordFromAddressBook
+    [Migration("20250316091937_InitialMigration")]
+    partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -55,7 +55,12 @@ namespace DataAccessLayer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("AddressBook");
                 });
@@ -87,6 +92,22 @@ namespace DataAccessLayer.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("UserData");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Entity.AddressBookEntity", b =>
+                {
+                    b.HasOne("DataAccessLayer.Entity.UserEntity", "User")
+                        .WithMany("AddressBook")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Entity.UserEntity", b =>
+                {
+                    b.Navigation("AddressBook");
                 });
 #pragma warning restore 612, 618
         }

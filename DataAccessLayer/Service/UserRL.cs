@@ -9,6 +9,7 @@ using DataAccessLayer.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ModelLayer.Model;
+using StackExchange.Redis;
 
 namespace RepositoryLayer.Service
 {
@@ -19,7 +20,6 @@ namespace RepositoryLayer.Service
         public UserRL(AddressBookContext dbContext)
         {
             _dbContext = dbContext;
-            
         }
 
 
@@ -39,6 +39,13 @@ namespace RepositoryLayer.Service
         {
             try
             {
+                //string cacheKey = $"User:{userLoginModel.Email}";
+
+                //var cachedToken = _cache.StringGet(cacheKey);
+                //if (!cachedToken.IsNullOrEmpty)
+                //{
+                //    return cachedToken; // Return cached token
+                //}
                 var data = _dbContext.UserData.FirstOrDefault(e => e.Email == userLoginModel.Email);
                 if (data != null)
                 {

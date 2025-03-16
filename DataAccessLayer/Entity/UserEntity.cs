@@ -9,6 +9,11 @@ namespace DataAccessLayer.Entity
 {
     public class UserEntity
     {
+        public UserEntity()
+        {
+            AddressBook = new HashSet<AddressBookEntity>();
+        }
+
         [Key]
         public int Id { get; set; }
 
@@ -23,6 +28,8 @@ namespace DataAccessLayer.Entity
 
         [Required]
         public string Password { get; set; }
+
+        public virtual ICollection<AddressBookEntity> AddressBook { get; set; }
 
 
     }

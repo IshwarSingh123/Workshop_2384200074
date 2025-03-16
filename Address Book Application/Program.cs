@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using BusinessLayer.Interface;
 using BusinessLayer.Service;
@@ -9,15 +9,16 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using RabbitMQ.Client;
 using RepositoryLayer.Service;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 // Add services to the container.
-
 builder.Services.AddControllers();
 
+// Dependency Injection for Business & Data Layers
 builder.Services.AddScoped<IAddressBookRL, AddressBookRL>();
 builder.Services.AddScoped<IAddressBookBL, AddressBookBL>();
 
@@ -28,11 +29,14 @@ builder.Services.AddScoped<IUserBL, UserBL>();
 builder.Services.AddScoped<IUserRL, UserRL>();
 builder.Services.AddScoped<JwtServices>();
 
+builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
+
+
+// Configure Database
 var connectionString = builder.Configuration.GetConnectionString("SqlConnection");
 builder.Services.AddDbContext<AddressBookContext>(Options => Options.UseSqlServer(connectionString));
-//Jwt services
 
-
+// Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 builder.Services.AddAuthentication(options =>
@@ -53,12 +57,11 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ClockSkew = TimeSpan.Zero // Optional: Reduce token time drift
+        ClockSkew = TimeSpan.Zero
     };
 });
 
-
-//Swagger
+// Configure Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -73,6 +76,7 @@ builder.Services.AddSwaggerGen(options =>
             Email = "ishwarmars@gmail.com"
         }
     });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Enter 'Bearer {your_token}' below:",
@@ -101,20 +105,66 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFile));
 });
 
+// Configure Redis
+var configurationOptions = new ConfigurationOptions
+{
+    EndPoints = { "localhost:6380" },
+    AbortOnConnectFail = false,
+    ConnectTimeout = 5000
+};
 
+var redisConnection = ConnectionMultiplexer.Connect(configurationOptions);
+builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
+builder.Services.AddSingleton<IDatabase>(sp =>
+    sp.GetRequiredService<IConnectionMultiplexer>().GetDatabase());
 
+builder.Services.AddSingleton<IConnectionFactory>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>().GetSection("RabbitMQ");
+    return new ConnectionFactory()
+    {
+        HostName = config["Host"], // Ensure this is not null
+        UserName = config["Username"],
+        Password = config["Password"]
+    };
+});
+
+// Register RabbitMQ Connection
+builder.Services.AddSingleton<IConnection>(sp =>
+{
+    var factory = sp.GetRequiredService<IConnectionFactory>();
+    return factory.CreateConnection();
+});
+
+// Register RabbitMQ Producer and Consumer
+builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
+builder.Services.AddSingleton<RabbitMQConsumer>();
 
 var app = builder.Build();
 
+// Start RabbitMQ Consumer (Manually)
+using (var scope = app.Services.CreateScope())
+{
+    var consumer = scope.ServiceProvider.GetRequiredService<RabbitMQConsumer>();
+    consumer.StartListening();
+}
+
+
+
+
+
+
+// Enable Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Configure the HTTP request pipeline.
-
+// Configure Middleware
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Start RabbitMQ Consumer Manually
 
 app.Run();

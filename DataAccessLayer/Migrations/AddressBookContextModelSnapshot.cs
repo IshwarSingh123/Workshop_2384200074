@@ -53,7 +53,12 @@ namespace DataAccessLayer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("AddressBook");
                 });
@@ -85,6 +90,22 @@ namespace DataAccessLayer.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("UserData");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Entity.AddressBookEntity", b =>
+                {
+                    b.HasOne("DataAccessLayer.Entity.UserEntity", "User")
+                        .WithMany("AddressBook")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DataAccessLayer.Entity.UserEntity", b =>
+                {
+                    b.Navigation("AddressBook");
                 });
 #pragma warning restore 612, 618
         }
