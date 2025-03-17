@@ -1,4 +1,5 @@
 using BusinessLayer.Interface;
+using DataAccessLayer.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModelLayer.Model;
@@ -77,29 +78,40 @@ namespace Address_Book_Application.Controllers
         /// <param name="addressBookModel"></param>
         /// <returns></returns>
         [Authorize]
-        [HttpPost("addNewContact")]
-        public IActionResult AddNewContact(AddressBookModel addressBookModel)
+        [HttpPost]
+        public IActionResult AddNewContact([FromBody] AddressBookModel addressBookModel)
         {
             try
             {
                 if (addressBookModel == null)
                 {
-                    return BadRequest("AddressBookModel is null.");
+                    return BadRequest(new ResponseModel<string>
+                    {
+                        Success = false,
+                        Message = "Invalid contact details",
+                        Data = null
+                    });
                 }
 
-                var response = new ResponseModel<string>();
                 var result = _addressBookBL.AddNewContact(addressBookModel);
-
-                response.Success = true;
-                response.Message = "Contact Added Successfully.";
-                response.Data = result.Email;
-                return Ok(response);
+                return Ok(new ResponseModel<AddressBookEntity>
+                {
+                    Success = true,
+                    Message = "Contact Added Successfully.",
+                    Data = result
+                });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+                return StatusCode(500, new ResponseModel<string>
+                {
+                    Success = false,
+                    Message = "Internal Server Error",
+                    Data = ex.Message  // Optional: You can remove this in production.
+                });
             }
         }
+
         /// <summary>
         /// Put method to Update a contact
         /// </summary>

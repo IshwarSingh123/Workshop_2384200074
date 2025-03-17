@@ -56,6 +56,7 @@ namespace BusinessLayer.Service
                     PhoneNumber = addressBookModel.PhoneNumber,
                     Address = addressBookModel.Address,
                     Country = addressBookModel.Country,
+                    UserId= addressBookModel.UserId
 
                 };
                 return _addressBookRL.AddNewContact(newContact);

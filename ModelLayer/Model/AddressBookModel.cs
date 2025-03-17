@@ -16,11 +16,7 @@ namespace ModelLayer.Model
         public string PhoneNumber { get; set; }
         public string Address { get; set; }
         public string Country { get; set; }
+        public int UserId { get; set; }
 
-        public string  ToString()
-        {
-            return $"{FirstName}\n{LastName}\n{Email}" +
-                    $"\n{PhoneNumber}\n{Address}\n{Country}";
-        }
     }
 }
